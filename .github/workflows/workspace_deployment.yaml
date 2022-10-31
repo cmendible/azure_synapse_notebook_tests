@@ -1,0 +1,35 @@
+name: Synapse Workspace Deployment
+
+on:
+  push:
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  # Validate job
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      # Checks out your repository under $GITHUB_WORKSPACE, so your job can access it.
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Validate
+        uses: Azure/Synapse-workspace-deployment@V1.7.0
+        with:
+          TargetWorkspaceName: "cfmcfm"
+          ArtifactsFolder: "./workspace"
+          operation: "validate"
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: synapse-artifacts
+          path: ./ExportedArtifacts

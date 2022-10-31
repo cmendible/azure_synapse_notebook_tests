@@ -1,0 +1,45 @@
+name: Notebook Linting & Unit Tests
+
+on:
+  push:
+
+  pull_request:
+    branches: [main]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  # Tests job
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Install nbqa & testbook
+        run: |
+          python -m pip install -U "nbqa[toolchain]"
+          pip install testbook[dev]
+
+      - name: Extract & fix ipynb
+        run: |
+          mkdir ./ipynb_to_test
+          for f in $(find ./workspace/notebook -type f \( -iname "*.json" \))
+          do
+              echo "Working on $f file name now"
+              cat $f | jq -r '(.properties.cells[] | select(.metadata? | not)) += {metadata: {}} | .properties' > ./ipynb_to_test/$(basename $f).ipynb
+          done
+
+      - name: Run pylint on ipynb files
+        run: nbqa pylint ./ipynb_to_test/
+
+      - name: Run testbook tests
+        run: |
+          pytest ./unit_tests/*.py
